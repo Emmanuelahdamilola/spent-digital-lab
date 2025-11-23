@@ -1,20 +1,47 @@
 import express from 'express';
-import authenticate from "../middlewares/auth";
-import controller from '../controllers/research.controller.js';
-
 const router = express.Router();
+import {researchController} from '../controllers/research.controller.js';
+import { authenticate, requireRole } from '../middleware/auth.js';
+import { validateCreateResearch, validateUpdateResearch } from '../utilities/researchValidation.js';
+const upload = multer({ dest: 'uploads/' }); // Configure multer as needed
 
 
-// admin only
-router.post("/", authenticate, controller.createResearch);
-router.put("/:id", authenticate, controller.updateResearch);
-router.delete("/:id", authenticate, controller.deleteResearch);
+router.use(authenticate);
+router.get('/', researchController.getAllResearch);
 
-// public
-router.get("/", controller.getAllResearch);
-router.get("/:id", controller.getSingleResearch);
+router.get('/tags', researchController.getTags);
 
-// upload
-router.post("/upload", authenticate, uploadMiddleware, controller.uploadPDF);
+router.get('/:id', researchController.getResearchById);
+
+// Create research (admin, editor, superadmin)
+router.post(
+  '/create',
+  requireRole('admin', 'superadmin', 'editor'),
+  upload.fields([
+    { name: 'pdf', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 }
+  ]),
+  validateCreateResearch,
+  researchController.createResearch
+);
+
+// Update research (admin, editor, superadmin)
+router.put(
+  '/:id',
+  requireRole('admin', 'superadmin', 'editor'),
+  upload.fields([
+    { name: 'pdf', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 }
+  ]),
+  validateUpdateResearch,
+  researchController.updateResearch
+);
+
+// Delete research (admin, superadmin only)
+router.delete(
+  '/:id',
+  requireRole('admin', 'superadmin'),
+  researchController.deleteResearch
+);
 
 export default router;

@@ -1,4 +1,4 @@
-const Joi = require('joi');
+import Joi from 'joi';
 
 const createResearchValidation = Joi.object({
   title: Joi.string()
