@@ -8,19 +8,20 @@ const seedSuperAdmin = async () => {
     await mongoose.connect(config.mongoURI);
     console.log("Connected to MongoDB");
 
-    // Check if superadmin exists
-    const existingAdmin = await Admin.findOne({ email: "admin@example.com" });
+    const SUPERADMIN_EMAIL = "superadmin@example.com"; 
+
+    const existingAdmin = await Admin.findOne({ email: SUPERADMIN_EMAIL });
     if (existingAdmin) {
       console.log("Superadmin already exists");
       await mongoose.connection.close();
       return process.exit(0);
     }
 
-    // Create superadmin — password will auto-hash via schema pre-save hook
+    // Create superadmin
     await Admin.create({
       name: "Super Admin",
-      email: "admin@example.com",
-      password: "Admin123!", 
+      email: SUPERADMIN_EMAIL,
+      password: "Admin123!",
       role: "superadmin",
     });
 
@@ -29,7 +30,6 @@ const seedSuperAdmin = async () => {
     // Close DB connection
     await mongoose.connection.close();
     process.exit(0);
-
   } catch (error) {
     console.error("Error seeding superadmin:", error);
     await mongoose.connection.close();

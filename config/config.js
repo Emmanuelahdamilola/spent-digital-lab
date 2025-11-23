@@ -23,3 +23,11 @@ requiredEnvVariables.forEach(key => {
     process.exit(1);
   }
 })
+
+// Validate Cloudinary env vars
+const cloudinaryRequired = ['CLOUDINARY_KEY', 'CLOUDINARY_SECRET', 'CLOUDINARY_CLOUD_NAME'];
+cloudinaryRequired.forEach(key => {
+  if (!process.env[key]) {
+    console.warn(`Warning: Missing Cloudinary config: ${key}`);
+  }
+});

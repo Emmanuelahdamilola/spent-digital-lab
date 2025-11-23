@@ -9,8 +9,8 @@ import {
   getAllAdmins
 } from "../controllers/admin.controller.js";
 
-import { authenticate } from "../middleware/auth.js";
-import { requireRole } from "../middleware/roles.js";
+import { authenticate, requireRole } from "../middlewares/auth.js";
+
 
 const router = express.Router();
 
