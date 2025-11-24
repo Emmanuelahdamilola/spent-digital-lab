@@ -153,7 +153,7 @@ const getTeamById = async (req, res) => {
     const team = await Team.findById(id)
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
-
+ 
     if (!team) {
       return res.status(404).json({
         success: false,

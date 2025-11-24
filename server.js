@@ -9,6 +9,7 @@ import researchRoutes from './routes/research.route.js';
 import publicationRoutes from './routes/publication.route.js';
 import eventsRoutes from './routes/events.route.js';
 import teamRoutes from './routes/team.route.js';
+import programsRoutes from './routes/programs.route.js';
 
 const app = express();
 // Connect to DB
@@ -30,6 +31,7 @@ app.use('/api/admin/research', researchRoutes);
 app.use('/api/admin/publications', publicationRoutes);
 app.use('/api/admin/events', eventsRoutes);
 app.use('/api/admin/team', teamRoutes);
+app.use('/api/admin/programs', programsRoutes);
 
 // Test route
 app.get("/", (req, res) => {

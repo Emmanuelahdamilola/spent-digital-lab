@@ -69,4 +69,6 @@ const programSchema = new mongoose.Schema({
 programSchema.index({ title: 'text', description: 'text' });
 programSchema.index({ programType: 1 });
 
-export default mongoose.model('Program', programSchema);
+const Programs = mongoose.model('Program', programSchema);
+
+export default Programs;

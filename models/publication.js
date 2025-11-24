@@ -75,4 +75,6 @@ publicationSchema.index({ title: 'text', abstract: 'text', authors: 'text' });
 publicationSchema.index({ tags: 1 });
 publicationSchema.index({ publishedDate: -1 });
 
-export default mongoose.model('Publication', publicationSchema);
+const Publications = mongoose.model('Publication', publicationSchema);
+
+export default Publications;
