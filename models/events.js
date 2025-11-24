@@ -74,4 +74,6 @@ eventSchema.index({ title: 'text', description: 'text', location: 'text' });
 eventSchema.index({ startDate: -1 });
 eventSchema.index({ eventType: 1 });
 
-export default mongoose.model('Event', eventSchema);
+const Event = mongoose.model('Event', eventSchema);
+
+export default Event;

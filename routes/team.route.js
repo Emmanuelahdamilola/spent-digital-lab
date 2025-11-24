@@ -4,6 +4,8 @@ import controller from '../controllers/team.controller.js';
 
 const router = express.Router();
 
+router.use(authenticate)
+
 
 // admin only
 router.post("/", authenticate, controller.createTeam);

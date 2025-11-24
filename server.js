@@ -6,6 +6,8 @@ import adminRoutes from "./routes/admin.routes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import { authLimiter } from "./middlewares/rateLimiter.js";
 import researchRoutes from './routes/research.route.js';
+import publicationRoutes from './routes/publication.route.js';
+import eventsRoutes from './routes/events.route.js';
 
 const app = express();
 // Connect to DB
@@ -24,6 +26,8 @@ app.use("/api/admin/auth", authLimiter);
 app.use("/api/admin", adminRoutes);  
 app.use('/api/admin/upload', uploadRoutes);
 app.use('/api/admin/research', researchRoutes);
+app.use('/api/admin/publications', publicationRoutes);
+app.use('/api/admin/events', eventsRoutes);
 
 // Test route
 app.get("/", (req, res) => {
