@@ -70,4 +70,6 @@ teamSchema.index({ name: 'text', position: 'text', bio: 'text' });
 teamSchema.index({ order: 1 });
 teamSchema.index({ department: 1 });
 
-export default mongoose.model('Team', teamSchema);
+const Team = mongoose.model('Team', teamSchema);
+
+export default Team;

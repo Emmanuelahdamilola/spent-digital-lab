@@ -8,6 +8,7 @@ import { authLimiter } from "./middlewares/rateLimiter.js";
 import researchRoutes from './routes/research.route.js';
 import publicationRoutes from './routes/publication.route.js';
 import eventsRoutes from './routes/events.route.js';
+import teamRoutes from './routes/team.route.js';
 
 const app = express();
 // Connect to DB
@@ -28,6 +29,7 @@ app.use('/api/admin/upload', uploadRoutes);
 app.use('/api/admin/research', researchRoutes);
 app.use('/api/admin/publications', publicationRoutes);
 app.use('/api/admin/events', eventsRoutes);
+app.use('/api/admin/team', teamRoutes);
 
 // Test route
 app.get("/", (req, res) => {

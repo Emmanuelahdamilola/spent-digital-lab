@@ -1,22 +1,35 @@
-import express from 'express';
-import authenticate from "../middlewares/auth";
-import controller from '../controllers/team.controller.js';
-
+import express from "express";
 const router = express.Router();
+import {teamsController} from "../controllers/team.controller.js";
+import { authenticate, requireRole } from "../middlewares/auth.js";
+import {
+  validateCreateTeam,
+  validateUpdateTeam,
+} from "../utilities/teamValidation.js";
+import upload from "../config/multer.js";
 
-router.use(authenticate)
+router.use(authenticate);
 
-
-// admin only
-router.post("/", authenticate, controller.createTeam);
-router.put("/:id", authenticate, controller.updateTeam);
-router.delete("/:id", authenticate, controller.deleteTeam);
-
-// public
-router.get("/", controller.getAllTeam);
-router.get("/:id", controller.getSingleTeam);
-
-// upload
-router.post("/upload", authenticate, uploadMiddleware, controller.uploadPDF);
+router.get("/", teamsController.getAllTeams);
+router.get("/:id", teamsController.getTeamById);
+router.post(
+  "/create",
+  requireRole("admin", "superadmin", "editor"),
+  upload.single("pdf"),
+  validateCreateTeam,
+  teamsController.createTeam
+);
+router.put(
+  "/:id",
+  requireRole("admin", "superadmin", "editor"),
+  upload.single("pdf"),
+  validateUpdateTeam,
+  teamsController.updateTeam
+);
+router.delete(
+  "/:id",
+  requireRole("admin", "superadmin"),
+  teamsController.deleteTeam
+);
 
 export default router;
