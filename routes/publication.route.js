@@ -1,20 +1,16 @@
 import express from 'express';
-import authenticate from "../middlewares/auth";
-import controller from '../controllers/publications.controller.js';
+const  router = express.Router();
+import publicationController from '../controllers/publications.controller.js';
+import { authenticate, requireRole }from '../middlewares/auth.js';
+import { validateCreatePublication, validateUpdatePublication }from '../utilities/publicationValidation.js';
+import upload from '../config/multer.js';
 
-const router = express.Router();
+router.use(authenticate);
 
-
-// admin only
-router.post("/", authenticate, controller.createPublications);
-router.put("/:id", authenticate, controller.updatePublications);
-router.delete("/:id", authenticate, controller.deletePublications);
-
-// public
-router.get("/", controller.getAllPublications);
-router.get("/:id", controller.getSinglePublications);
-
-// upload
-router.post("/upload", authenticate, uploadMiddleware, controller.uploadPDF);
+router.get('/', publicationController.getAllPublications);
+router.get('/:id', publicationController.getPublicationById);
+router.post('/create', requireRole('admin', 'superadmin', 'editor'), upload.single('pdf'), validateCreatePublication, publicationController.createPublication);
+router.put('/:id', requireRole('admin', 'superadmin', 'editor'), upload.single('pdf'), validateUpdatePublication, publicationController.updatePublication);
+router.delete('/:id', requireRole('admin', 'superadmin'), publicationController.deletePublication);
 
 export default router;
