@@ -47,12 +47,12 @@ const partnerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin'
   }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
+// Indexes for search and filtering
 partnerSchema.index({ name: 'text', description: 'text' });
 partnerSchema.index({ partnerType: 1 });
 partnerSchema.index({ order: 1 });
+partnerSchema.index({ isPublished: 1 });
 
 export default mongoose.model('Partner', partnerSchema);

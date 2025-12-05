@@ -1,0 +1,283 @@
+{
+  "info": {
+    "name": "Elevate Backend API",
+    "description": "Postman Collection for Admin Panel API (Auth, Research, Publications, Events, Team, Programs, Upload)",
+    "_postman_id": "elevate-backend-collection-001",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Admin Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Super Admin\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"superadmin\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/auth/register"
+          }
+        },
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/auth/login"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "Upload Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/api/admin/upload/image"
+          }
+        },
+        {
+          "name": "Upload PDF",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/api/admin/upload/pdf"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Research",
+      "item": [
+        {
+          "name": "Create Research",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"AI in Agriculture\",\n  \"summary\": \"A deep dive into AI technologies in farming.\",\n  \"category\": \"Agriculture\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/research"
+          }
+        },
+        {
+          "name": "Get All Research",
+          "request": { "method": "GET", "url": "{{base_url}}/api/admin/research" }
+        },
+        {
+          "name": "Get Single Research",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/admin/research/:id"
+          }
+        },
+        {
+          "name": "Update Research",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Research\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/research/:id"
+          }
+        },
+        {
+          "name": "Delete Research",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/research/:id"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Publications",
+      "item": [
+        {
+          "name": "Create Publication",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Climate Change Report" },
+                { "key": "authors", "value": "John Doe" },
+                { "key": "isPublished", "value": "true" },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/api/admin/publications"
+          }
+        },
+        {
+          "name": "Get All Publications",
+          "request": { "method": "GET", "url": "{{base_url}}/api/admin/publications" }
+        },
+        {
+          "name": "Get Single Publication",
+          "request": { "method": "GET", "url": "{{base_url}}/api/admin/publications/:id" }
+        },
+        {
+          "name": "Update Publication",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Updated Publication\" }"
+            },
+            "url": "{{base_url}}/api/admin/publications/:id"
+          }
+        },
+        {
+          "name": "Delete Publication",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/publications/:id"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Tech Summit\", \"date\": \"2025-01-01\" }"
+            },
+            "url": "{{base_url}}/api/admin/events"
+          }
+        },
+        {
+          "name": "Get All Events",
+          "request": { "method": "GET", "url": "{{base_url}}/api/admin/events" }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": { "mode": "raw", "raw": "{ \"title\": \"Updated Event\" }" },
+            "url": "{{base_url}}/api/admin/events/:id"
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/events/:id"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Team",
+      "item": [
+        {
+          "name": "Create Team Member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "John Doe" },
+                { "key": "role", "value": "Research Lead" },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/api/admin/team"
+          }
+        },
+        {
+          "name": "Get All Team",
+          "request": { "method": "GET", "url": "{{base_url}}/api/admin/team" }
+        },
+        {
+          "name": "Delete Team Member",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/team/:id"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Programs",
+      "item": [
+        {
+          "name": "Create Program",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Youth Empowerment Program\" }"
+            },
+            "url": "{{base_url}}/api/admin/programs"
+          }
+        },
+        {
+          "name": "Get All Programs",
+          "request": { "method": "GET", "url": "{{base_url}}/api/admin/programs" }
+        },
+        {
+          "name": "Delete Program",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/programs/:id"
+          }
+        }
+      ]
+    }
+
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:6000" },
+    { "key": "token", "value": "" }
+  ]
+}

@@ -1,347 +1,178 @@
+import Research from "../models/research.js";
+import { uploadService } from "../services/uploadService.js";
 
-import Research from '../models/reasearch';
-import {uploadService} from '../services/uploadService';
-
-// Create Research
 const createResearch = async (req, res) => {
-  try {
-    const { title, summary, author, tags, isPublished } = req.validatedBody;
-    
-    let pdfUrl = null;
-    let pdfPublicId = null;
-    let coverImage = null;
-    let coverImagePublicId = null;
+  let pdfPublicId, coverImagePublicId;
 
-    // Handle PDF upload
-    if (req.files && req.files.pdf) {
-      const pdfResult = await uploadService.uploadPDF(
-        req.files.pdf[0].buffer,
-        { folder: 'research/pdfs' }
-      );
-      pdfUrl = pdfResult.secure_url;
+  try {
+    const body = req.validatedBody || {};
+
+    // Normalize arrays
+    const authors = Array.isArray(body.authors) ? body.authors : body.authors ? [body.authors] : [];
+    const tags = Array.isArray(body.tags) ? body.tags : body.tags ? [body.tags] : [];
+    const categories = Array.isArray(body.categories) ? body.categories : body.categories ? [body.categories] : [];
+
+    // Upload files
+    if (req.files?.pdf?.[0]) {
+      const pdfResult = await uploadService.uploadPDF(req.files.pdf[0].buffer, { folder: "research/pdfs" });
+      body.pdfUrl = pdfResult.secure_url;
+      body.pdfPublicId = pdfResult.public_id;
       pdfPublicId = pdfResult.public_id;
     }
 
-    // Handle cover image upload
-    if (req.files && req.files.coverImage) {
-      const imageResult = await uploadService.uploadImage(
-        req.files.coverImage[0].buffer,
-        { folder: 'research/covers' }
-      );
-      coverImage = imageResult.secure_url;
+    if (req.files?.coverImage?.[0]) {
+      const imageResult = await uploadService.uploadImage(req.files.coverImage[0].buffer, { folder: "research/covers" });
+      body.coverImage = imageResult.secure_url;
+      body.coverImagePublicId = imageResult.public_id;
       coverImagePublicId = imageResult.public_id;
     }
 
-    // Create research document
-    const research = await Research.create({
-      title,
-      summary,
-      author,
-      tags: tags || [],
-      pdfUrl,
-      pdfPublicId,
-      coverImage,
-      coverImagePublicId,
-      isPublished: isPublished || false,
-      publishedAt: isPublished ? new Date() : null,
+    const doc = await Research.create({
+      ...body,
+      authors,
+      tags,
+      categories,
+      publishedAt: body.isPublished ? new Date() : null,
       createdBy: req.user.id
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'Research created successfully',
-      data: research
-    });
+    return res.status(201).json({ success: true, message: "Research created", data: doc });
   } catch (error) {
-    // Clean up uploaded files if database save fails
-    if (req.files) {
-      if (req.files.pdf && pdfPublicId) {
-        await uploadService.deleteFile(pdfPublicId, 'raw').catch(err => 
-          console.error('Failed to cleanup PDF:', err)
-        );
-      }
-      if (req.files.coverImage && coverImagePublicId) {
-        await uploadService.deleteFile(coverImagePublicId, 'image').catch(err => 
-          console.error('Failed to cleanup cover image:', err)
-        );
-      }
-    }
-
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    if (pdfPublicId) await uploadService.deleteFile(pdfPublicId, "raw").catch(() => {});
+    if (coverImagePublicId) await uploadService.deleteFile(coverImagePublicId, "image").catch(() => {});
+    console.error("createResearch error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Get All Research (with pagination, search, filters)
 const getAllResearch = async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      search = '',
-      tag = '',
-      author = '',
-      isPublished,
-      sortBy = 'createdAt',
-      order = 'desc'
-    } = req.query;
-
-    // Build query
+    const { page = 1, limit = 10, search = "", tag = "", author = "", isPublished, sortBy = "createdAt", order = "desc" } = req.query;
     const query = {};
 
-    // Text search
-    if (search) {
-      query.$text = { $search: search };
-    }
+    if (search) query.$text = { $search: search };
+    if (tag) query.tags = tag;
+    if (author) query.authors = new RegExp(author, "i");
+    if (isPublished !== undefined) query.isPublished = isPublished === "true";
 
-    // Filter by tag
-    if (tag) {
-      query.tags = tag;
-    }
-
-    // Filter by author
-    if (author) {
-      query.author = new RegExp(author, 'i'); // Case-insensitive
-    }
-
-    // Filter by published status
-    if (isPublished !== undefined) {
-      query.isPublished = isPublished === 'true';
-    }
-
-    // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const sortOrder = order === 'asc' ? 1 : -1;
+    const sortOrder = order === "asc" ? 1 : -1;
 
-    // Execute query
-    const [research, total] = await Promise.all([
+    const [docs, total] = await Promise.all([
       Research.find(query)
         .sort({ [sortBy]: sortOrder })
         .skip(skip)
         .limit(parseInt(limit))
-        .populate('createdBy', 'name email')
-        .populate('updatedBy', 'name email')
+        .populate("createdBy", "name email")
+        .populate("updatedBy", "name email")
         .lean(),
       Research.countDocuments(query)
     ]);
 
-    res.json({
+    return res.json({
       success: true,
-      data: research,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit))
-      }
+      data: docs,
+      pagination: { total, page: parseInt(page), limit: parseInt(limit), pages: Math.ceil(total / parseInt(limit)) }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error("getAllResearch error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Get Research by ID
 const getResearchById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const doc = await Research.findById(req.params.id)
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email");
 
-    const research = await Research.findById(id)
-      .populate('createdBy', 'name email')
-      .populate('updatedBy', 'name email');
-
-    if (!research) {
-      return res.status(404).json({
-        success: false,
-        message: 'Research not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: research
-    });
+    if (!doc) return res.status(404).json({ success: false, message: "Research not found" });
+    return res.json({ success: true, data: doc });
   } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid research ID'
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    if (error.name === "CastError") return res.status(400).json({ success: false, message: "Invalid ID" });
+    console.error("getResearchById error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Update Research
 const updateResearch = async (req, res) => {
+  let newPdfPublicId, newCoverPublicId;
+
   try {
-    const { id } = req.params;
-    const updateData = { ...req.validatedBody };
+    const body = req.validatedBody || {};
+    const doc = await Research.findById(req.params.id);
+    if (!doc) return res.status(404).json({ success: false, message: "Research not found" });
 
-    // Find existing research
-    const research = await Research.findById(id);
-    
-    if (!research) {
-      return res.status(404).json({
-        success: false,
-        message: 'Research not found'
-      });
+    // Replace PDF
+    if (req.files?.pdf?.[0]) {
+      if (doc.pdfPublicId) await uploadService.deleteFile(doc.pdfPublicId, "raw").catch(() => {});
+      const pdfResult = await uploadService.uploadPDF(req.files.pdf[0].buffer, { folder: "research/pdfs" });
+      body.pdfUrl = pdfResult.secure_url;
+      body.pdfPublicId = pdfResult.public_id;
+      newPdfPublicId = pdfResult.public_id;
     }
 
-    // Handle PDF replacement
-    if (req.files && req.files.pdf) {
-      // Delete old PDF if exists
-      if (research.pdfPublicId) {
-        await uploadService.deleteFile(research.pdfPublicId, 'raw')
-          .catch(err => console.error('Failed to delete old PDF:', err));
-      }
-
-      // Upload new PDF
-      const pdfResult = await uploadService.uploadPDF(
-        req.files.pdf[0].buffer,
-        { folder: 'research/pdfs' }
-      );
-      updateData.pdfUrl = pdfResult.secure_url;
-      updateData.pdfPublicId = pdfResult.public_id;
+    // Replace cover image
+    if (req.files?.coverImage?.[0]) {
+      if (doc.coverImagePublicId) await uploadService.deleteFile(doc.coverImagePublicId, "image").catch(() => {});
+      const imageResult = await uploadService.uploadImage(req.files.coverImage[0].buffer, { folder: "research/covers" });
+      body.coverImage = imageResult.secure_url;
+      body.coverImagePublicId = imageResult.public_id;
+      newCoverPublicId = imageResult.public_id;
     }
 
-    // Handle cover image replacement
-    if (req.files && req.files.coverImage) {
-      // Delete old image if exists
-      if (research.coverImagePublicId) {
-        await uploadService.deleteFile(research.coverImagePublicId, 'image')
-          .catch(err => console.error('Failed to delete old cover:', err));
-      }
-
-      // Upload new image
-      const imageResult = await uploadService.uploadImage(
-        req.files.coverImage[0].buffer,
-        { folder: 'research/covers' }
-      );
-      updateData.coverImage = imageResult.secure_url;
-      updateData.coverImagePublicId = imageResult.public_id;
-    }
-
-    // Update publishedAt if publishing
-    if (updateData.isPublished && !research.isPublished) {
-      updateData.publishedAt = new Date();
-    }
-
-    // Set updatedBy
-    updateData.updatedBy = req.user.id;
-
-    // Update research
-    const updatedResearch = await Research.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    )
-      .populate('createdBy', 'name email')
-      .populate('updatedBy', 'name email');
-
-    res.json({
-      success: true,
-      message: 'Research updated successfully',
-      data: updatedResearch
+    // Normalize arrays
+    ["authors", "tags", "categories"].forEach(key => {
+      if (body[key] && typeof body[key] === "string") body[key] = [body[key]];
     });
+
+    if (body.isPublished && !doc.isPublished) body.publishedAt = new Date();
+    body.updatedBy = req.user.id;
+
+    const updated = await Research.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true })
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email");
+
+    return res.json({ success: true, message: "Research updated", data: updated });
   } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid research ID'
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    if (newPdfPublicId) await uploadService.deleteFile(newPdfPublicId, "raw").catch(() => {});
+    if (newCoverPublicId) await uploadService.deleteFile(newCoverPublicId, "image").catch(() => {});
+    console.error("updateResearch error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Delete Research
 const deleteResearch = async (req, res) => {
   try {
-    const { id } = req.params;
+    const doc = await Research.findById(req.params.id);
+    if (!doc) return res.status(404).json({ success: false, message: "Research not found" });
 
-    const research = await Research.findById(id);
-
-    if (!research) {
-      return res.status(404).json({
-        success: false,
-        message: 'Research not found'
-      });
-    }
-
-    // Delete associated files from Cloudinary
     const deletePromises = [];
-
-    if (research.pdfPublicId) {
-      deletePromises.push(
-        uploadService.deleteFile(research.pdfPublicId, 'raw')
-          .catch(err => console.error('Failed to delete PDF:', err))
-      );
-    }
-
-    if (research.coverImagePublicId) {
-      deletePromises.push(
-        uploadService.deleteFile(research.coverImagePublicId, 'image')
-          .catch(err => console.error('Failed to delete cover:', err))
-      );
-    }
-
-    // Wait for file deletions (don't block if they fail)
+    if (doc.pdfPublicId) deletePromises.push(uploadService.deleteFile(doc.pdfPublicId, "raw").catch(() => {}));
+    if (doc.coverImagePublicId) deletePromises.push(uploadService.deleteFile(doc.coverImagePublicId, "image").catch(() => {}));
     await Promise.allSettled(deletePromises);
 
-    // Delete from database
-    await research.deleteOne();
-
-    res.json({
-      success: true,
-      message: 'Research deleted successfully'
-    });
+    await doc.deleteOne();
+    return res.json({ success: true, message: "Research deleted" });
   } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid research ID'
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    if (error.name === "CastError") return res.status(400).json({ success: false, message: "Invalid ID" });
+    console.error("deleteResearch error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Get unique tags (useful for filters)
 const getTags = async (req, res) => {
   try {
-    const tags = await Research.distinct('tags');
-    
-    res.json({
-      success: true,
-      data: tags.filter(tag => tag) // Remove empty strings
-    });
+    const tags = await Research.distinct("tags");
+    return res.json({ success: true, data: tags.filter(Boolean) });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error("getTags error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
-export {  createResearch,
+export default {
+  createResearch,
   getAllResearch,
   getResearchById,
   updateResearch,

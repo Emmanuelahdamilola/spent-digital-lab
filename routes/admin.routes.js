@@ -9,14 +9,14 @@ import {
   getAllAdmins
 } from "../controllers/admin.controller.js";
 
-import { authenticate, requireRole } from "../middlewares/auth.js";
+import { authenticate, requireRole } from "../middleware/auth.js";
 
 
 const router = express.Router();
 
 // Auth routes
 router.post("/auth/login", login);
-router.post("/auth/refresh", refresh);
+router.get("/auth/refresh", refresh);
 router.post("/auth/logout", authenticate, logout);
 router.get("/auth/me", authenticate, me);
 

@@ -1,20 +1,51 @@
 import express from 'express';
-import authenticate from "../middlewares/auth";
-import controller from '../controllers/partner.controller.js';
+import { authenticate, requireRole } from "../middleware/auth.js";
+import upload from "../config/multer.js";
+import {
+  createPartner,
+  getAllPartners,
+  getPartnerById,
+  updatePartner,
+  deletePartner
+} from '../controllers/partner.controller.js';
+import validate from "../middleware/validate.js";
+import {
+  createPartnerValidation,
+  updatePartnerValidation,
+  partnerIdValidation
+} from '../validations/partner.validation.js';
 
 const router = express.Router();
 
+// PUBLIC
+router.get("/", getAllPartners);
+router.get("/:id", validate(partnerIdValidation), getPartnerById);
 
-// admin only
-router.post("/", authenticate, controller.createPartner);
-router.put("/:id", authenticate, controller.updatePartner);
-router.delete("/:id", authenticate, controller.deletePartner);
+// ADMIN ONLY
+router.post(
+  "/",
+  authenticate,
+  requireRole("admin", "superadmin"),
+  upload.single("logo"),
+  validate(createPartnerValidation),
+  createPartner
+);
 
-// public
-router.get("/", controller.getAllPartner);
-router.get("/:id", controller.getSinglePartner);
+router.put(
+  "/:id",
+  authenticate,
+  requireRole("admin", "superadmin"),
+  upload.single("logo"),
+  validate(updatePartnerValidation),
+  updatePartner
+);
 
-// upload
-router.post("/upload", authenticate, uploadMiddleware, controller.uploadPDF);
+router.delete(
+  "/:id",
+  authenticate,
+  requireRole("superadmin"),
+  validate(partnerIdValidation),
+  deletePartner
+);
 
 export default router;

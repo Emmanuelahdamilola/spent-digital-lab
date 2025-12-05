@@ -1,20 +1,19 @@
 import Publication from '../models/publication.js';
-import uploadService from '../services/uploadService.js';
+import { uploadService } from "../services/uploadService.js";
 
 const createPublication = async (req, res) => {
   try {
     const publicationData = { ...req.validatedBody };
-    
+
+    // Upload PDF if exists
     if (req.file) {
       const result = await uploadService.uploadPDF(req.file.buffer, { folder: 'publications/pdfs' });
       publicationData.pdfUrl = result.secure_url;
       publicationData.pdfPublicId = result.public_id;
     }
 
-    if (publicationData.isPublished) {
-      publicationData.publishedAt = new Date();
-    }
-
+    // Set publishedAt if publishing
+    if (publicationData.isPublished) publicationData.publishedAt = new Date();
     publicationData.createdBy = req.user.id;
 
     const publication = await Publication.create(publicationData);
@@ -31,8 +30,17 @@ const createPublication = async (req, res) => {
 
 const getAllPublications = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', year, tag, isPublished, sortBy = 'year', order = 'desc' } = req.query;
-    
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      year,
+      tag,
+      isPublished,
+      sortBy = 'year',
+      order = 'desc'
+    } = req.query;
+
     const query = {};
     if (search) query.$text = { $search: search };
     if (year) query.year = parseInt(year);
@@ -48,6 +56,7 @@ const getAllPublications = async (req, res) => {
         .skip(skip)
         .limit(parseInt(limit))
         .populate('createdBy', 'name email')
+        .populate('updatedBy', 'name email')
         .lean(),
       Publication.countDocuments(query)
     ]);
@@ -55,7 +64,12 @@ const getAllPublications = async (req, res) => {
     res.json({
       success: true,
       data: publications,
-      pagination: { total, page: parseInt(page), limit: parseInt(limit), pages: Math.ceil(total / parseInt(limit)) }
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit))
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -67,13 +81,12 @@ const getPublicationById = async (req, res) => {
     const publication = await Publication.findById(req.params.id)
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
-    
-    if (!publication) {
-      return res.status(404).json({ success: false, message: 'Publication not found' });
-    }
+
+    if (!publication) return res.status(404).json({ success: false, message: 'Publication not found' });
 
     res.json({ success: true, data: publication });
   } catch (error) {
+    if (error.name === 'CastError') return res.status(400).json({ success: false, message: 'Invalid publication ID' });
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -81,31 +94,32 @@ const getPublicationById = async (req, res) => {
 const updatePublication = async (req, res) => {
   try {
     const publication = await Publication.findById(req.params.id);
-    if (!publication) {
-      return res.status(404).json({ success: false, message: 'Publication not found' });
-    }
+    if (!publication) return res.status(404).json({ success: false, message: 'Publication not found' });
 
     const updateData = { ...req.validatedBody };
 
+    // Handle PDF replacement
     if (req.file) {
-      if (publication.pdfPublicId) {
-        await uploadService.deleteFile(publication.pdfPublicId, 'raw').catch(console.error);
-      }
+      if (publication.pdfPublicId) await uploadService.deleteFile(publication.pdfPublicId, 'raw').catch(console.error);
       const result = await uploadService.uploadPDF(req.file.buffer, { folder: 'publications/pdfs' });
       updateData.pdfUrl = result.secure_url;
       updateData.pdfPublicId = result.public_id;
     }
 
-    if (updateData.isPublished && !publication.isPublished) {
-      updateData.publishedAt = new Date();
-    }
-
+    // Update publishedAt if publishing now
+    if (updateData.isPublished && !publication.isPublished) updateData.publishedAt = new Date();
     updateData.updatedBy = req.user.id;
 
-    const updated = await Publication.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
+    Object.assign(publication, updateData);
+    await publication.save();
 
-    res.json({ success: true, message: 'Publication updated successfully', data: updated });
+    const updatedPublication = await Publication.findById(publication._id)
+      .populate('createdBy', 'name email')
+      .populate('updatedBy', 'name email');
+
+    res.json({ success: true, message: 'Publication updated successfully', data: updatedPublication });
   } catch (error) {
+    if (error.name === 'CastError') return res.status(400).json({ success: false, message: 'Invalid publication ID' });
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -113,23 +127,20 @@ const updatePublication = async (req, res) => {
 const deletePublication = async (req, res) => {
   try {
     const publication = await Publication.findById(req.params.id);
-    if (!publication) {
-      return res.status(404).json({ success: false, message: 'Publication not found' });
-    }
+    if (!publication) return res.status(404).json({ success: false, message: 'Publication not found' });
 
-    if (publication.pdfPublicId) {
-      await uploadService.deleteFile(publication.pdfPublicId, 'raw').catch(console.error);
-    }
+    if (publication.pdfPublicId) await uploadService.deleteFile(publication.pdfPublicId, 'raw').catch(console.error);
 
     await publication.deleteOne();
-
     res.json({ success: true, message: 'Publication deleted successfully' });
   } catch (error) {
+    if (error.name === 'CastError') return res.status(400).json({ success: false, message: 'Invalid publication ID' });
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-export {
+// Export all functions as a default object
+export default {
   createPublication,
   getAllPublications,
   getPublicationById,

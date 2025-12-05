@@ -15,6 +15,7 @@ const teamSchema = new mongoose.Schema({
   bio: {
     type: String,
     required: [true, 'Bio is required'],
+    trim: true,
     maxlength: [1000, 'Bio cannot exceed 1000 characters']
   },
   email: {
@@ -66,7 +67,10 @@ const teamSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Text indexes for search
 teamSchema.index({ name: 'text', position: 'text', bio: 'text' });
+
+// Index for ordering and filtering
 teamSchema.index({ order: 1 });
 teamSchema.index({ department: 1 });
 

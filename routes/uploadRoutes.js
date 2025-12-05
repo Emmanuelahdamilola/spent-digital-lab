@@ -2,7 +2,7 @@
 import express from 'express';
 import * as uploadController from "../controllers/uploadController.js";
 import upload from '../config/multer.js';
-import { authenticate, requireRole } from '../middlewares/auth.js';
+import { authenticate, requireRole } from '../middleware/auth.js';
 
 
 const router = express.Router();

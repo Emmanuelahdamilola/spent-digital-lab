@@ -1,35 +1,61 @@
 import express from "express";
 const router = express.Router();
-import eventsController from "../controllers/events.controller.js";
-import { authenticate, requireRole } from "../middlewares/auth.js";
+
 import {
-  validateCreatePublication,
-  validateUpdatePublication,
-} from "../utilities/publicationValidation.js";
+  createEvent,
+  getAllEvents,
+  getEventById,
+  updateEvent,
+  deleteEvent,
+  getTags,
+} from "../controllers/events.controller.js";
+
 import upload from "../config/multer.js";
 
-router.use(authenticate);
+import {
+  validateEventCreate,
+  validateEventUpdate,
+} from "../utilities/eventValidation.js";
 
-router.get("/", eventsController.getAllEvents);
-router.get("/:id", eventsController.getEventById);
+import { authenticate, requireRole } from "../middleware/auth.js";
+
+// ✅ PUBLIC ROUTES (no authentication)
+router.get("/", getAllEvents);
+router.get("/tags", getTags);
+router.get("/:id", getEventById);
+
+// ✅ PROTECTED ROUTES (authentication required)
+// Admin / Editor can create/update
 router.post(
   "/create",
+  authenticate,
   requireRole("admin", "superadmin", "editor"),
-  upload.single("pdf"),
-  validateCreatePublication,
-  eventsController.createEvent
+  upload.fields([
+    { name: "pdf", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  validateEventCreate,
+  createEvent
 );
+
 router.put(
   "/:id",
+  authenticate,
   requireRole("admin", "superadmin", "editor"),
-  upload.single("pdf"),
-  validateUpdatePublication,
-  eventsController.updateEvent
+  upload.fields([
+    { name: "pdf", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  validateEventUpdate,
+  updateEvent
 );
+
+// Only superadmin can delete
 router.delete(
-  "/:id",
-  requireRole("admin", "superadmin"),
-  eventsController.deleteEvent
+  "/:id", 
+  authenticate, 
+  requireRole("superadmin"), 
+  deleteEvent
 );
 
 export default router;

@@ -6,7 +6,7 @@ export default {
   port: process.env.PORT || 5000,
   jwt_secret: process.env.JWT_SECRET,
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET,
-  jwt_access_expiry: process.env.JWT_ACCESS_EXP || "15m",
+  jwt_access_expiry: process.env.JWT_ACCESS_EXP || "1hr",
   jwt_refresh_expiry: process.env.JWT_REFRESH_EXP || "7d",
   bcrypt_salt_rounds: parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12,
   cloudinary_key: process.env.CLOUDINARY_KEY,

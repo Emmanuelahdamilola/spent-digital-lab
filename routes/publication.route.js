@@ -1,16 +1,43 @@
 import express from 'express';
-const  router = express.Router();
 import publicationController from '../controllers/publications.controller.js';
-import { authenticate, requireRole }from '../middlewares/auth.js';
-import { validateCreatePublication, validateUpdatePublication }from '../utilities/publicationValidation.js';
-import upload from '../config/multer.js';
+import { authenticate, requireRole } from '../middleware/auth.js';
+import { validate, createPublicationValidation, updatePublicationValidation } from '../validators/publication.validator.js';
+import upload from '../middleware/upload.js'; // Adjust path if your upload middleware is elsewhere
 
-router.use(authenticate);
+const router = express.Router();
 
+// Create publication
+router.post(
+  '/',
+  authenticate,
+  requireRole('admin', 'super_admin'), // Note: requireRole uses spread operator, not array
+  upload.single('pdf'),
+  validate(createPublicationValidation),
+  publicationController.createPublication
+);
+
+// Get all publications
 router.get('/', publicationController.getAllPublications);
+
+// Get publication by ID
 router.get('/:id', publicationController.getPublicationById);
-router.post('/create', requireRole('admin', 'superadmin', 'editor'), upload.single('pdf'), validateCreatePublication, publicationController.createPublication);
-router.put('/:id', requireRole('admin', 'superadmin', 'editor'), upload.single('pdf'), validateUpdatePublication, publicationController.updatePublication);
-router.delete('/:id', requireRole('admin', 'superadmin'), publicationController.deletePublication);
+
+// Update publication
+router.put(
+  '/:id',
+  authenticate,
+  requireRole('admin', 'super_admin'),
+  upload.single('pdf'),
+  validate(updatePublicationValidation),
+  publicationController.updatePublication
+);
+
+// Delete publication
+router.delete(
+  '/:id',
+  authenticate,
+  requireRole('admin', 'super_admin'),
+  publicationController.deletePublication
+);
 
 export default router;

@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import validate from '../middleware/validate.js'; // Import the validate function
 
 const createPublicationValidation = Joi.object({
   title: Joi.string().required().trim().min(3).max(300),
@@ -24,21 +25,4 @@ const updatePublicationValidation = Joi.object({
   isPublished: Joi.boolean()
 }).min(1);
 
-const validate = (schema) => (req, res, next) => {
-  const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation error',
-      errors: error.details.map(d => ({ field: d.path.join('.'), message: d.message }))
-    });
-  }
-  req.validatedBody = value;
-  next();
-};
-
-export {
-  createPublicationValidation,
-  updatePublicationValidation,
-  validate
-};
+export { createPublicationValidation, updatePublicationValidation, validate };

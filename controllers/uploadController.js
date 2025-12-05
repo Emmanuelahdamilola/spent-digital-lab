@@ -1,4 +1,4 @@
-import uploadService from "../services/uploadService.js";
+import { uploadService } from "../services/uploadService.js";
 
 const uploadImage = async (req, res) => {
   try {

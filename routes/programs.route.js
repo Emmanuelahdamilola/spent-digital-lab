@@ -1,20 +1,43 @@
 import express from 'express';
-import authenticate from "../middlewares/auth";
+import { authenticate, requireRole } from '../middleware/auth.js';
 import controller from '../controllers/programs.controller.js';
+import upload from '../middleware/upload.js'; // Changed variable name
 
 const router = express.Router();
 
+// Public routes
+router.get('/tags/list', controller.getProgramTags);
+router.get('/', controller.getAllPrograms);
+router.get('/:id', controller.getProgramById);
 
-// admin only
-router.post("/", authenticate, controller.createPrograms);
-router.put("/:id", authenticate, controller.updatePrograms);
-router.delete("/:id", authenticate, controller.deletePrograms);
+// Admin-only routes
+router.post(
+  '/',
+  authenticate,
+  requireRole('admin', 'super_admin'),
+  upload.fields([
+    { name: 'pdf', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 }
+  ]),
+  controller.createProgram
+);
 
-// public
-router.get("/", controller.getAllPrograms);
-router.get("/:id", controller.getSinglePrograms);
+router.put(
+  '/:id',
+  authenticate,
+  requireRole('admin', 'super_admin'),
+  upload.fields([
+    { name: 'pdf', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 }
+  ]),
+  controller.updateProgram
+);
 
-// upload
-router.post("/upload", authenticate, uploadMiddleware, controller.uploadPDF);
+router.delete(
+  '/:id',
+  authenticate,
+  requireRole('admin', 'super_admin'),
+  controller.deleteProgram
+);
 
 export default router;
